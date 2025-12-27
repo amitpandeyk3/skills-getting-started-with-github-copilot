@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Build participants HTML (bulleted list or empty note)
         const participantsHTML = details.participants.length
-          ? `<ul class="participants-list">${details.participants.map(p => `<li class="participant-item">${p}</li>`).join("")}</ul>`
+          ? `<ul class="participants-list">${details.participants.map(p => `<li class="participant-item">${p} <span class="delete-participant" title="Remove" data-participant="${p}">&#128465;</span></li>`).join("")}</ul>`
           : `<p class="no-participants">No participants yet</p>`;
 
         activityCard.innerHTML = `
@@ -37,6 +37,25 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         activitiesList.appendChild(activityCard);
+
+        // Add event listeners for delete icons
+        activityCard.querySelectorAll('.delete-participant').forEach(icon => {
+          icon.addEventListener('click', (e) => {
+            const participant = icon.getAttribute('data-participant');
+            // Call unregister API (assume DELETE /api/activities/:activity/participants/:participant)
+            fetch(`/api/activities/${name}/participants/${participant}`, {
+              method: 'DELETE'
+            })
+            .then(res => {
+              if (res.ok) {
+                // Remove participant from UI
+                icon.parentElement.remove();
+              } else {
+                alert('Failed to remove participant.');
+              }
+            });
+          });
+        });
 
         // Add option to select dropdown
         const option = document.createElement("option");
@@ -71,6 +90,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities list to show new participant
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
